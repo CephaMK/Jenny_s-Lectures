@@ -6,13 +6,12 @@ print ('eg print ("Hello" + "Jenny")')
 print ("New lines can be created with a backlash and a n")
 
 #input#
+name = input("What is your name?")
+print ('Hey ' + name + " How are you")
 
-print ('Hey ' + input("What is your name?") + " How are you")
+#variables
 
-#variables#
-
-name = input('What is your name?')
 length = len(name)
 
-print (name) 
-print (length)
+print (f"Your name is {name}") 
+print (f"It has {length} characters")
