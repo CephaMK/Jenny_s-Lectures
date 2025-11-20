@@ -1,6 +1,6 @@
 #!usr/bin/python3
 
-#This program calculations the user's tax as per their income. A simple income tax calculator
+#This program calculates the user's tax as per their income. A simple income tax calculator
 
 print("Simple income tax calculator")
 

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-#This code calculates the cost of the users electricity bill as pr the amount of units used.
+#This code calculates the cost of the users electricity bill as per the amount of units used.
 
 units = float(input("Enter electricity units used: "))
 
