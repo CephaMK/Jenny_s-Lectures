@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kiswahili Language Intelligence Engine — Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12293A;
+    --panel: #1B3B50;
+    --panel-line: #2C5470;
+    --gold: #E3A857;
+    --gold-soft: #C98A3E;
+    --cream: #F3EEE2;
+    --cream-dim: #B9C6CE;
+    --ok: #6FAE8A;
+    --warn: #C97A54;
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Work Sans', sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image: radial-gradient(circle at 15% 0%, rgba(227,168,87,0.07), transparent 45%);
+    color: var(--cream);
+    font-family: var(--font-body);
+    min-height: 100%;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+  header.hero {
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    color: var(--gold);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    margin: 0 0 10px;
+    font-family: var(--font-body);
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 38px;
+    line-height: 1.12;
+    margin: 0 0 12px;
+    color: var(--cream);
+  }
+  .sub {
+    color: var(--cream-dim);
+    font-size: 16px;
+    max-width: 46ch;
+    margin: 0;
+  }
+  .badge-preview {
+    display: inline-block;
+    margin-top: 18px;
+    font-size: 12.5px;
+    color: var(--bg);
+    background: var(--gold);
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+
+  section.panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 6px;
+    padding: 26px;
+    margin-bottom: 22px;
+  }
+  section.panel h2 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 21px;
+    margin: 0 0 18px;
+    color: var(--cream);
+    border-bottom: 1px solid var(--panel-line);
+    padding-bottom: 12px;
+  }
+
+  .type-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .type-tab {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--panel-line);
+    color: var(--cream-dim);
+    padding: 9px 0;
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .type-tab.active {
+    border-color: var(--gold);
+    color: var(--bg);
+    background: var(--gold);
+    font-weight: 600;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+  }
+  input[type="text"] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--panel-line);
+    color: var(--cream);
+    padding: 12px 14px;
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-size: 15px;
+  }
+  input[type="text"]:focus {
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
+  }
+  input[type="text"]::placeholder { color: #6E8494; }
+
+  button.primary {
+    background: var(--gold);
+    color: var(--bg);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  button.primary:hover { background: var(--gold-soft); }
+
+  .hint {
+    color: var(--cream-dim);
+    font-size: 13px;
+    margin-top: 10px;
+  }
+
+  .word-display {
+    font-family: var(--font-display);
+    font-size: 26px;
+    color: var(--gold);
+    margin-bottom: 18px;
+  }
+
+  .morpheme-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 22px;
+  }
+  .morpheme-chip {
+    background: var(--bg);
+    border: 1px solid var(--gold-soft);
+    color: var(--cream);
+    padding: 7px 12px;
+    border-radius: 4px;
+    font-family: 'Work Sans', monospace;
+    font-size: 14px;
+  }
+  .morpheme-chip.root {
+    border-color: var(--gold);
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .plus {
+    color: var(--cream-dim);
+    align-self: center;
+    font-size: 14px;
+  }
+
+  .attr-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .attr {
+    border-left: 2px solid var(--gold-soft);
+    padding-left: 12px;
+  }
+  .attr-label {
+    color: var(--cream-dim);
+    font-size: 12.5px;
+    margin-bottom: 3px;
+  }
+  .attr-value {
+    font-size: 16px;
+    color: var(--cream);
+    font-weight: 500;
+  }
+
+  .check-list { list-style: none; padding: 0; margin: 0 0 14px; }
+  .check-list li {
+    padding: 7px 0;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .check-icon { font-size: 15px; }
+  .check-icon.pass { color: var(--ok); }
+
+  .status-banner {
+    background: rgba(111,174,138,0.14);
+    border: 1px solid var(--ok);
+    color: var(--ok);
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 14.5px;
+    font-weight: 500;
+  }
+
+  .explanation-text {
+    font-size: 15.5px;
+    color: var(--cream);
+    line-height: 1.65;
+  }
+
+  .ask-row { display: flex; gap: 10px; margin-top: 4px; }
+  .ask-answer {
+    margin-top: 14px;
+    background: var(--bg);
+    border: 1px dashed var(--panel-line);
+    color: var(--cream-dim);
+    padding: 12px 14px;
+    border-radius: 4px;
+    font-size: 14px;
+    display: none;
+  }
+
+  .empty-state {
+    color: var(--cream-dim);
+    font-size: 15px;
+    text-align: center;
+    padding: 20px 0 4px;
+  }
+
+  #results { display: none; }
+
+  footer {
+    text-align: center;
+    color: #5E7788;
+    font-size: 12.5px;
+    margin-top: 36px;
+  }
+
+  @media (max-width: 460px) {
+    .attr-grid { grid-template-columns: 1fr 1fr; }
+    h1 { font-size: 30px; }
+    .input-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Kiswahili Language Intelligence Engine</p>
+    <h1>From words to understanding</h1>
+    <p class="sub">Type a Kiswahili word or sentence to see its morphology and grammar broken down in plain language.</p>
+    <span class="badge-preview">Visual preview — the real app runs with Streamlit</span>
+  </header>
+
+  <section class="panel">
+    <h2>Input</h2>
+    <div class="type-tabs">
+      <button class="type-tab active" data-type="word">Word</button>
+      <button class="type-tab" data-type="sentence">Sentence</button>
+      <button class="type-tab" data-type="question">Question</button>
+    </div>
+    <div class="input-row">
+      <input type="text" id="mainInput" placeholder="e.g. kitabu" value="Ninampenda">
+      <button class="primary" id="analyzeBtn">Analyze</button>
+    </div>
+    <p class="hint" id="inputHint">Try "Ninampenda" or "Anasoma"</p>
+  </section>
+
+  <div id="emptyState" class="empty-state">Enter a Kiswahili word or sentence above and click Analyze to begin.</div>
+
+  <div id="results">
+    <section class="panel">
+      <h2>Morphological Analysis</h2>
+      <div class="word-display" id="wordDisplay">Ninampenda</div>
+      <div class="morpheme-row" id="morphemeRow"></div>
+      <div class="attr-grid" id="attrGrid"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Grammar Analysis</h2>
+      <ul class="check-list" id="checkList"></ul>
+      <div class="status-banner" id="statusBanner">Overall: Grammatically correct</div>
+    </section>
+
+    <section class="panel">
+      <h2>Explanation</h2>
+      <p class="explanation-text" id="explanationText"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Ask the Language Engine</h2>
+      <div class="ask-row">
+        <input type="text" id="askInput" placeholder='e.g. Why is "ni" used in this word?'>
+        <button class="primary" id="askBtn">Ask</button>
+      </div>
+      <div class="ask-answer" id="askAnswer">This is a placeholder answer. Once the RAG/chatbot feature is connected, this will pull a real explanation from the Kiswahili corpus.</div>
+    </section>
+  </div>
+
+  <footer>Phase 1 preview · fake data, shaped like the real API response</footer>
+</div>
+
+<script>
+  const DATA = {
+    ninampenda: {
+      word: "Ninampenda",
+      morphemes: ["ni", "na", "m", "pend", "a"],
+      root: "pend",
+      subject: "1st person singular",
+      tense: "Present",
+      object_class: "Class 1",
+      checks: [
+        { label: "Subject agreement", pass: true },
+        { label: "Object agreement", pass: true },
+        { label: "Verb structure", pass: true }
+      ],
+      explanation: "The word \u201cninampenda\u201d means \u201cI love him/her.\u201d The prefix \u201cni-\u201d marks the subject (I), \u201c-na-\u201d marks present tense, \u201c-m-\u201d marks a Class 1 object (him/her), \u201cpend\u201d is the root meaning \u201clove,\u201d and the final \u201c-a\u201d closes the verb."
+    },
+    anasoma: {
+      word: "Anasoma",
+      morphemes: ["a", "na", "som", "a"],
+      root: "som",
+      subject: "3rd person singular",
+      tense: "Present",
+      object_class: "None",
+      checks: [
+        { label: "Subject agreement", pass: true },
+        { label: "Object agreement", pass: true },
+        { label: "Verb structure", pass: true }
+      ],
+      explanation: "The word \u201canasoma\u201d means \u201che/she is reading.\u201d The prefix \u201ca-\u201d marks a 3rd person singular subject, \u201c-na-\u201d marks present tense, and \u201csom\u201d is the root meaning \u201cread.\u201d"
+    }
+  };
+
+  const hints = {
+    word: 'Try "kitabu" — or use the example already filled in: "Ninampenda"',
+    sentence: 'Try "Ninampenda mtoto."',
+    question: 'Try "What is the tense of this verb?"'
+  };
+  const placeholders = {
+    word: "e.g. kitabu",
+    sentence: "e.g. Ninampenda mtoto.",
+    question: "e.g. What is the tense of this verb?"
+  };
+
+  const tabs = document.querySelectorAll('.type-tab');
+  const mainInput = document.getElementById('mainInput');
+  const inputHint = document.getElementById('inputHint');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const type = tab.dataset.type;
+      mainInput.placeholder = placeholders[type];
+      inputHint.textContent = hints[type];
+    });
+  });
+
+  function renderResult(key, rawText) {
+    const d = DATA[key] || DATA.ninampenda;
+    document.getElementById('wordDisplay').textContent = key in DATA ? d.word : rawText;
+
+    const morphemeRow = document.getElementById('morphemeRow');
+    morphemeRow.innerHTML = '';
+    d.morphemes.forEach((m, i) => {
+      if (i > 0) {
+        const plus = document.createElement('span');
+        plus.className = 'plus';
+        plus.textContent = '+';
+        morphemeRow.appendChild(plus);
+      }
+      const chip = document.createElement('span');
+      chip.className = 'morpheme-chip' + (m === d.root ? ' root' : '');
+      chip.textContent = m;
+      morphemeRow.appendChild(chip);
+    });
+
+    const attrs = [
+      ['Subject', d.subject],
+      ['Tense', d.tense],
+      ['Object', d.object_class],
+      ['Root', d.root]
+    ];
+    const attrGrid = document.getElementById('attrGrid');
+    attrGrid.innerHTML = '';
+    attrs.forEach(([label, value]) => {
+      const div = document.createElement('div');
+      div.className = 'attr';
+      div.innerHTML = `<div class="attr-label">${label}</div><div class="attr-value">${value}</div>`;
+      attrGrid.appendChild(div);
+    });
+
+    const checkList = document.getElementById('checkList');
+    checkList.innerHTML = '';
+    d.checks.forEach(c => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="check-icon pass">&#10003;</span> ${c.label}`;
+      checkList.appendChild(li);
+    });
+
+    document.getElementById('explanationText').textContent = d.explanation;
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('askAnswer').style.display = 'none';
+  }
+
+  document.getElementById('analyzeBtn').addEventListener('click', () => {
+    const text = mainInput.value.trim();
+    if (!text) return;
+    const key = text.toLowerCase().replace('.', '');
+    renderResult(key, text);
+  });
+
+  document.getElementById('askBtn').addEventListener('click', () => {
+    const q = document.getElementById('askInput').value.trim();
+    if (!q) return;
+    document.getElementById('askAnswer').style.display = 'block';
+  });
+
+  mainInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('analyzeBtn').click();
+  });
+
+  // show the default example on load
+  renderResult('ninampenda', 'Ninampenda');
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+[
+  {
+    "step": 1,
+    "input": "Ninampenda",
+    "purpose": "Show a full morphology + grammar + explanation cycle"
+  },
+  {
+    "step": 2,
+    "input": "Anasoma",
+    "purpose": "Show a second example with a different subject/no object"
+  },
+  {
+    "step": 3,
+    "input": "Why is \"ni\" used in this word?",
+    "purpose": "Show the Ask box (placeholder now, real RAG answer later)"
+  }
+]
