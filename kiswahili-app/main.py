@@ -4,6 +4,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from src.morphology import KiswahiliMorphologyEngine
+from rules.grammar_engine import KiswahiliGrammarEngine
+
 
 app = FastAPI(
     title="Kiswahili Language Intelligence API",
@@ -20,9 +22,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize the morphology engine
+# Initialize the morphology engine and grammer engine
 try:
     engine = KiswahiliMorphologyEngine()
+    grammar_engine = KiswahiliGrammarEngine()
     engine_loaded = True
 except Exception as e:
     print(f"⚠️ Engine initialization error: {e}")
@@ -68,13 +71,48 @@ def analyze_single_word(request: WordRequest):
 
 @app.post("/api/v1/analyze/sentence", tags=["Analysis"])
 def analyze_full_sentence(request: SentenceRequest):
+
     if not engine_loaded:
-        raise HTTPException(status_code=503, detail="Morphology Engine is not initialized.")
+        raise HTTPException(
+            status_code=503,
+            detail="NLP engines are not initialized."
+        )
+
     try:
-        results = engine.analyze_sentence(request.sentence)
-        return {"success": True, "input": request.sentence, "analysis": results}
+
+        # ---------------------------------------------------------------
+        # STEP 1: Morphological analysis
+        # ---------------------------------------------------------------
+
+        results = engine.analyze_sentence(
+            request.sentence
+        )
+
+        # ---------------------------------------------------------------
+        # STEP 2: Grammar analysis
+        # ---------------------------------------------------------------
+
+        grammar_result = grammar_engine.evaluate_sentence(
+            results
+        )
+
+        # ---------------------------------------------------------------
+        # STEP 3: Return both results
+        # ---------------------------------------------------------------
+
+        return {
+            "success": True,
+            "input": request.sentence,
+            "analysis": results,
+            "grammar": grammar_result
+        }
+
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
 
 @app.get("/api/v1/dataset/search", tags=["Dataset"])
 def search_dataset(query: str):

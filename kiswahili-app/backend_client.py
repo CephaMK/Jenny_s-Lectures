@@ -1,107 +1,131 @@
 """
 backend_client.py
-------------------
-This is the ONLY file you will need to change once Brian's FastAPI is ready.
+-----------------
+Client used by the Streamlit frontend to communicate with the
+real FastAPI backend.
 
-Right now, `analyze()` returns fake/hardcoded data that mimics what the
-real API will eventually return. Everything else in the app (components,
-app.py) talks to this function and doesn't care whether the data is fake
-or real.
+The Streamlit UI should NOT need to know the FastAPI URL or
+request format. It simply calls:
 
-WHEN BRIAN'S API IS READY:
-    1. Uncomment the `requests.post(...)` block below.
-    2. Delete (or ignore) the FAKE_RESPONSES dictionary.
-    That's it — nothing else in the project needs to change.
+    analyze(text)
+
+and receives the backend analysis.
 """
 
-import time
-
-# import requests  # <-- uncomment when connecting to the real API
-
-API_URL = "http://localhost:8000/analyze"  # Brian's endpoint, once it exists
+import requests
 
 
-# ---------------------------------------------------------------------------
-# FAKE DATA (Phase 1) — stand-ins for Peter's morphology + Hillary/Faith's
-# grammar engine, shaped exactly like the JSON the real API is expected to
-# return (see the architecture doc, section 10).
-# ---------------------------------------------------------------------------
-FAKE_RESPONSES = {
-    "ninampenda": {
-        "word": "Ninampenda",
-        "morphemes": ["ni", "na", "m", "pend", "a"],
-        "subject": "1st person singular",
-        "tense": "present",
-        "object_class": "Class 1",
-        "root": "pend",
-        "gloss": "love",
-        "grammar": {
-            "valid": True,
-            "checks": [
-                {"label": "Subject agreement", "passed": True},
-                {"label": "Object agreement", "passed": True},
-                {"label": "Verb structure", "passed": True},
-            ],
-        },
-        "explanation": (
-            "The word 'ninampenda' means 'I love him/her'. The prefix 'ni-' "
-            "marks the subject (I), '-na-' marks present tense, '-m-' marks "
-            "a Class 1 object (him/her), 'pend' is the root meaning 'love', "
-            "and the final '-a' closes the verb."
-        ),
-    },
-    "anasoma": {
-        "word": "Anasoma",
-        "morphemes": ["a", "na", "som", "a"],
-        "subject": "3rd person singular",
-        "tense": "present",
-        "object_class": "None",
-        "root": "som",
-        "gloss": "read",
-        "grammar": {
-            "valid": True,
-            "checks": [
-                {"label": "Subject agreement", "passed": True},
-                {"label": "Object agreement", "passed": True},
-                {"label": "Verb structure", "passed": True},
-            ],
-        },
-        "explanation": (
-            "The word 'anasoma' means 'he/she is reading'. The prefix 'a-' "
-            "marks a 3rd person singular subject, '-na-' marks present "
-            "tense, and 'som' is the root meaning 'read'."
-        ),
-    },
-}
-
-DEFAULT_RESPONSE_KEY = "ninampenda"
+# Brian's real FastAPI server
+API_BASE_URL = "http://127.0.0.1:8000"
 
 
-def analyze(text: str) -> dict:
+def analyze(text: str, input_type: str = None) -> dict:
     """
-    Send `text` to the backend NLP system and return the parsed analysis.
+    Send Kiswahili input to the real FastAPI backend.
 
-    Phase 1 (now): returns fake data so the UI can be built and demoed
-    without depending on Peter, Hillary/Faith, or Brian being finished.
+    Parameters
+    ----------
+    text : str
+        The Kiswahili word or sentence to analyze.
 
-    Phase 2 (later): calls Brian's real FastAPI endpoint instead.
+    input_type : str, optional
+        "Word" or "Sentence".
+
+        If not supplied, the function makes a simple inference:
+        - text containing spaces -> Sentence
+        - otherwise -> Word
+
+    Returns
+    -------
+    dict
+        The analysis returned by the real FastAPI backend.
+
+    Raises
+    ------
+    ValueError
+        If the input is empty or the input type is invalid.
+
+    requests.RequestException
+        If the FastAPI server cannot be reached or returns an HTTP error.
     """
-    time.sleep(0.4)  # tiny delay so the UI's loading spinner is visible
 
-    key = text.strip().lower().replace(".", "")
-    if key in FAKE_RESPONSES:
-        return FAKE_RESPONSES[key]
+    text = text.strip()
 
-    # Unknown input in Phase 1: return the default example but flag it,
-    # so the UI still has something to show during early demos/testing.
-    fallback = dict(FAKE_RESPONSES[DEFAULT_RESPONSE_KEY])
-    fallback = {**fallback, "word": text, "note": "Demo mode: showing example analysis for unrecognized input."}
-    return fallback
+    if not text:
+        raise ValueError("Input cannot be empty.")
 
-    # -------------------------------------------------------------------
-    # REAL VERSION (uncomment once Brian's API exists, delete code above):
+    # ---------------------------------------------------------
+    # Determine whether we are analyzing a word or sentence
+    # ---------------------------------------------------------
+    if input_type is None:
+        if " " in text.strip():
+            input_type = "Sentence"
+        else:
+            input_type = "Word"
+
+    # ---------------------------------------------------------
+    # WORD ANALYSIS
+    # ---------------------------------------------------------
+    if input_type.lower() == "word":
+        url = f"{API_BASE_URL}/api/v1/analyze/word"
+
+        response = requests.post(
+            url,
+            json={"word": text},
+            timeout=10
+        )
+
+    # ---------------------------------------------------------
+    # SENTENCE ANALYSIS
+    # ---------------------------------------------------------
+    elif input_type.lower() == "sentence":
+        url = f"{API_BASE_URL}/api/v1/analyze/sentence"
+
+        response = requests.post(
+            url,
+            json={"sentence": text},
+            timeout=10
+        )
+
+    else:
+        raise ValueError(
+            f"Invalid input_type: {input_type}. "
+            "Use 'Word' or 'Sentence'."
+        )
+
+    # Raise an exception for HTTP errors such as:
+    # 400, 404, 500, 503, etc.
+    response.raise_for_status()
+
+    # FastAPI returns JSON
+    data = response.json()
+
+    # ---------------------------------------------------------
+    # Check that the backend reports success
+    # ---------------------------------------------------------
+    if not data.get("success", False):
+        raise RuntimeError(
+            data.get("detail", "Backend analysis failed.")
+        )
+
+    # ---------------------------------------------------------
+    # Return ONLY the actual analysis.
     #
-    # response = requests.post(API_URL, json={"text": text}, timeout=10)
-    # response.raise_for_status()
-    # return response.json()
-    # -------------------------------------------------------------------
+    # FastAPI response looks like:
+    #
+    # {
+    #     "success": True,
+    #     "input": "...",
+    #     "analysis": {...}
+    # }
+    #
+    # The UI should receive the "analysis" part.
+    # ---------------------------------------------------------
+    if input_type == "Sentence":
+
+        return {
+        "analysis": data["analysis"],
+        "grammar": data.get("grammar")
+    }
+
+    return data["analysis"]

@@ -1,18 +1,23 @@
 """
 morphology_display.py
 ----------------------
-Turns Peter's raw morphology JSON into a readable visual breakdown,
-instead of showing raw JSON to the user.
+Displays the REAL morphology analysis returned by the FastAPI backend.
 """
 
 import streamlit as st
 
 
 def render_morphology(result: dict):
+
     st.subheader("Morphological Analysis")
 
+    # ---------------------------------------------------------
+    # Basic information
+    # ---------------------------------------------------------
+
     word = result.get("word", "")
-    morphemes = result.get("morphemes", [])
+    word_type = result.get("type", "unknown")
+    is_valid = result.get("is_valid", False)
 
     st.markdown(
         f"<div style='font-family:Fraunces,serif;font-size:26px;"
@@ -20,45 +25,196 @@ def render_morphology(result: dict):
         unsafe_allow_html=True,
     )
 
-    if morphemes:
-        root = result.get("root", "")
+    # ---------------------------------------------------------
+    # Validity
+    # ---------------------------------------------------------
+
+    if is_valid:
+        st.success("✓ Valid Kiswahili word")
+    else:
+        st.warning("⚠ Word was not identified as a valid word")
+
+    # ---------------------------------------------------------
+    # Word type
+    # ---------------------------------------------------------
+
+    st.markdown(
+        f"**Word type:** `{word_type}`"
+    )
+
+    # ---------------------------------------------------------
+    # Morpheme / token representation
+    # ---------------------------------------------------------
+
+    tokens = result.get("tokens", [])
+
+    if tokens:
+
+        st.markdown("**Token sequence**")
+
         chips = []
-        for m in morphemes:
-            is_root = m == root
-            style = (
-                "border:1px solid var(--gold);color:var(--gold);font-weight:600;"
-                if is_root
-                else "border:1px solid var(--gold-soft);color:var(--text);"
-            )
+
+        for token in tokens:
+
             chips.append(
-                f"<span style='background:var(--bg);{style}"
-                f"padding:6px 10px;border-radius:4px;font-size:14px;'>{m}</span>"
+                f"<span style='background:var(--bg);"
+                f"border:1px solid var(--gold-soft);"
+                f"color:var(--text);"
+                f"padding:6px 10px;"
+                f"border-radius:4px;"
+                f"font-size:14px;'>{token}</span>"
             )
-        chip_html = " <span style='color:var(--text-dim);'>+</span> ".join(chips)
+
+        chip_html = (
+            " <span style='color:var(--text-dim);'>+</span> "
+            .join(chips)
+        )
+
         st.markdown(
             f"<div style='margin-bottom:16px;'>{chip_html}</div>",
             unsafe_allow_html=True,
         )
 
-    attrs = [
-        ("Subject", result.get("subject", "—")),
-        ("Tense", result.get("tense", "—")),
-        ("Object", result.get("object_class", "—")),
-        ("Root", result.get("root", "—")),
-    ]
-    cards_html = ""
-    for label, value in attrs:
-        cards_html += (
-            "<div style='border-left:2px solid var(--gold-soft);padding:8px 0 8px 12px;'>"
-            f"<div style='color:var(--text-dim);font-size:12.5px;margin-bottom:3px;'>{label}</div>"
-            f"<div style='color:var(--text);font-size:16px;font-weight:500;'>{value}</div>"
-            "</div>"
-        )
-    st.markdown(
-        f"<div style='display:grid;grid-template-columns:repeat(2,1fr);"
-        f"gap:14px;margin-bottom:8px;'>{cards_html}</div>",
-        unsafe_allow_html=True,
-    )
+    # ---------------------------------------------------------
+    # Morphological structure
+    # ---------------------------------------------------------
 
-    if result.get("note"):
-        st.info(result["note"])
+    if word_type == "verb":
+
+        subject_marker = result.get("subject_marker")
+        tense_marker = result.get("tense_marker")
+        object_marker = result.get("object_marker")
+        root = result.get("root")
+        suffix = result.get("suffix")
+
+        st.markdown("**Verb structure**")
+
+        structure = []
+
+        if result.get("negative"):
+            structure.append("Negative")
+
+        if subject_marker:
+            structure.append(f"Subject: {subject_marker}")
+
+        if tense_marker:
+            structure.append(f"Tense: {tense_marker}")
+
+        if object_marker:
+            structure.append(f"Object: {object_marker}")
+
+        if root:
+            structure.append(f"Root: {root}")
+
+        if suffix:
+            structure.append(f"Suffix: {suffix}")
+
+        if structure:
+
+            for item in structure:
+
+                st.markdown(
+                    f"- {item}"
+                )
+
+    # ---------------------------------------------------------
+    # Extract nested tense information
+    # ---------------------------------------------------------
+
+    tense = result.get("tense")
+
+    if isinstance(tense, dict):
+
+        tense_name = tense.get("name") or tense.get("tense")
+        marker = tense.get("marker")
+        negative = tense.get("is_negative")
+
+        if tense_name:
+
+            st.markdown(
+                f"**Tense:** `{tense_name}`"
+            )
+
+        if marker:
+
+            st.markdown(
+                f"**Tense marker:** `{marker}`"
+            )
+
+    # ---------------------------------------------------------
+    # Extract nested subject information
+    # ---------------------------------------------------------
+
+    subject = result.get("subject")
+
+    if isinstance(subject, dict):
+
+        person = subject.get("person")
+        marker = subject.get("marker")
+        noun_class = subject.get("class")
+
+        st.markdown("**Subject information**")
+
+        if person:
+            st.markdown(
+                f"- Person: `{person}`"
+            )
+
+        if marker:
+            st.markdown(
+                f"- Marker: `{marker}`"
+            )
+
+        if noun_class:
+            st.markdown(
+                f"- Noun class: `{noun_class}`"
+            )
+
+    # ---------------------------------------------------------
+    # Extract nested object information
+    # ---------------------------------------------------------
+
+    obj = result.get("object")
+
+    if isinstance(obj, dict):
+
+        st.markdown("**Object information**")
+
+        if obj.get("marker"):
+            st.markdown(
+                f"- Marker: `{obj.get('marker')}`"
+            )
+
+        if obj.get("class"):
+            st.markdown(
+                f"- Class: `{obj.get('class')}`"
+            )
+
+    elif obj is None:
+
+        st.markdown(
+            "**Object:** None detected"
+        )
+
+    # ---------------------------------------------------------
+    # Noun information
+    # ---------------------------------------------------------
+
+    noun_class = result.get("noun_class")
+
+    if noun_class:
+
+        st.markdown("**Noun class analysis**")
+
+        if isinstance(noun_class, dict):
+
+            for key, value in noun_class.items():
+
+                st.markdown(
+                    f"- **{key}:** `{value}`"
+                )
+
+        else:
+
+            st.write(noun_class)
+
