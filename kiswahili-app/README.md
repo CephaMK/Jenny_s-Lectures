@@ -1,7 +1,3 @@
-bsolutely. Since this is a **public GitHub repository**, the README should present the project professionally while accurately describing what is currently implemented, without claiming capabilities the system does not yet reliably provide.
-
-Here is a suitable README you can paste into `README.md`:
-
 # Kiswahili Language Intelligence Engine
 
 An interactive NLP application for analyzing Kiswahili words and sentences through **morphological analysis, grammatical analysis, explanations, and retrieval-based linguistic knowledge**.
